@@ -5,12 +5,10 @@ import time
 import glob
 
 app = Flask(__name__)
-app.secret_key = 'myflow_cyber_secret'
+app.secret_key = 'myflow_production_secret_key'
 
-# Server ပေါ်တွင် ယာယီသိမ်းမည့် နေရာ
-DOWNLOAD_FOLDER = 'downloads'
-if not os.path.exists(DOWNLOAD_FOLDER):
-    os.makedirs(DOWNLOAD_FOLDER)
+# Cloud Server များတွင် '/tmp' folder သည် အမြဲတမ်း write access ရှိသည်
+DOWNLOAD_FOLDER = '/tmp'
 
 # HTML Template (Cyberpunk Style)
 HTML_TEMPLATE = """
@@ -49,6 +47,7 @@ HTML_TEMPLATE = """
             background: rgba(10, 15, 20, 0.9);
             border: 1px solid var(--neon-blue);
             box-shadow: 0 0 15px var(--neon-dim), inset 0 0 20px var(--neon-dim);
+            /* Angled Corners (Sci-Fi Shape) */
             clip-path: polygon(
                 20px 0, 100% 0, 
                 100% calc(100% - 20px), calc(100% - 20px) 100%, 
@@ -57,6 +56,7 @@ HTML_TEMPLATE = """
             position: relative;
         }
 
+        /* Decorative Corner Lines */
         .cyber-card::before {
             content: ''; position: absolute; top: 0; left: 0; width: 50px; height: 50px;
             border-top: 3px solid var(--neon-blue); border-left: 3px solid var(--neon-blue);
@@ -68,6 +68,7 @@ HTML_TEMPLATE = """
             clip-path: polygon(100% 100%, 0 100%, 100% 0);
         }
 
+        /* Cyber Input */
         .cyber-input {
             background: rgba(0, 0, 0, 0.6);
             border: 1px solid #334155;
@@ -80,8 +81,10 @@ HTML_TEMPLATE = """
             border-color: var(--neon-blue);
             box-shadow: 0 0 15px var(--neon-dim);
             background: rgba(0, 243, 255, 0.05);
+            outline: none;
         }
 
+        /* Cyber Button */
         .cyber-btn {
             background: var(--neon-blue);
             color: #000;
@@ -98,6 +101,13 @@ HTML_TEMPLATE = """
             transform: translateY(-2px);
         }
 
+        /* Glitch Text Effect for Title */
+        .cyber-title {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00f3ff;
+        }
+
+        /* Radio Buttons */
         .cyber-radio:checked + div {
             background-color: var(--neon-blue);
             box-shadow: 0 0 10px var(--neon-blue);
@@ -113,7 +123,7 @@ HTML_TEMPLATE = """
         
         <!-- Header -->
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-white mb-2 tracking-wider font-['Orbitron'] uppercase" style="text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00f3ff;">YT TERMINAL</h1>
+            <h1 class="text-4xl font-bold text-white mb-2 tracking-wider cyber-title uppercase">YT TERMINAL</h1>
             <div class="h-[1px] w-1/2 bg-cyan-500 mx-auto mb-2 shadow-[0_0_10px_#00f3ff]"></div>
             <p class="text-cyan-300 text-sm font-bold tracking-[0.2em] uppercase" style="text-shadow: 0 0 5px rgba(0,243,255,0.5);">
                 Developed by MyFlow Production
@@ -136,7 +146,7 @@ HTML_TEMPLATE = """
             <div class="mb-8 relative">
                 <label class="text-cyan-500 text-xs font-bold mb-1 block uppercase tracking-widest">Input Stream</label>
                 <input type="text" name="url" placeholder="ENTER TARGET URL..." required
-                       class="cyber-input w-full px-4 py-3 text-cyan-100 placeholder-slate-500 outline-none">
+                       class="cyber-input w-full px-4 py-3 text-cyan-100 placeholder-slate-500">
             </div>
             
             <!-- Options -->
@@ -171,7 +181,7 @@ HTML_TEMPLATE = """
                     <div class="absolute inset-0 bg-cyan-400 blur-md opacity-0 group-hover:opacity-50 transition duration-300"></div>
                     <i class="fa-brands fa-tiktok text-2xl text-slate-400 group-hover:text-white relative z-10 transition"></i>
                 </a>
-                <a href="https://www.facebook.com/myfllowproduction/" target="_blank" class="group relative">
+                <a href="https://www.facebook.com/myfllowproduction" target="_blank" class="group relative">
                     <div class="absolute inset-0 bg-blue-600 blur-md opacity-0 group-hover:opacity-50 transition duration-300"></div>
                     <i class="fa-brands fa-facebook text-2xl text-slate-400 group-hover:text-white relative z-10 transition"></i>
                 </a>
@@ -191,10 +201,11 @@ HTML_TEMPLATE = """
 """
 
 def clear_old_files():
+    # ယာယီဖိုင်များကို ရှင်းလင်းခြင်း
     files = glob.glob(os.path.join(DOWNLOAD_FOLDER, '*'))
     for f in files:
         try:
-            if os.path.getmtime(f) < time.time() - 600: 
+            if os.path.getmtime(f) < time.time() - 600: # 10 မိနစ်ကျော်ရင်ဖျက်မယ်
                 os.remove(f)
         except: pass
 
@@ -208,18 +219,25 @@ def download():
     url = request.form.get('url')
     format_type = request.form.get('format')
     
+    # Download Options
     ydl_opts = {
         'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),
         'noplaylist': True,
         'restrictfilenames': True,
         'quiet': True,
+        # Browser User Agent အတုယောင်ထည့်ခြင်း
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     }
 
+    # Cookies.txt ကို GitHub Root folder မှ ရှာဖွေခြင်း
+    if os.path.exists('cookies.txt'):
+        ydl_opts['cookiefile'] = 'cookies.txt'
+
     if format_type == 'audio':
-        # M4A setting
+        # M4A Setting (Conversion မလိုပါ)
         ydl_opts['format'] = 'bestaudio[ext=m4a]/bestaudio'
     else:
-        # Video setting
+        # Video Setting
         ydl_opts['format'] = 'best'
 
     try:
@@ -227,22 +245,22 @@ def download():
             info = ydl.extract_info(url, download=True)
             filename = ydl.prepare_filename(info)
             
+            # M4A ဖိုင်အမည် မှန်ကန်စေရန် စစ်ဆေးခြင်း
             if format_type == 'audio' and not filename.endswith('.m4a'):
                 base = os.path.splitext(filename)[0]
                 possible_m4a = base + ".m4a"
-                if os.path.exists(possible_m4a):
+                if os.path.exists(possible_m4a): 
                     filename = possible_m4a
 
             return send_file(filename, as_attachment=True)
 
     except Exception as e:
         error_msg = str(e)
-        if "Sign in" in error_msg:
-             flash("ACCESS DENIED: Server IP Blocked by YouTube. Try again later.", "error")
+        if "Sign in" in error_msg or "429" in error_msg:
+             flash("ACCESS DENIED: Server IP Blocked. Please try again later or add cookies.txt.", "error")
         else:
              flash(f"SYSTEM ERROR: {str(e)}", "error")
         return redirect(url_for('home'))
 
 if __name__ == '__main__':
-
     app.run(host='0.0.0.0', port=5000)
