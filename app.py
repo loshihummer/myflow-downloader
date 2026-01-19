@@ -171,7 +171,7 @@ HTML_TEMPLATE = """
                     <div class="absolute inset-0 bg-cyan-400 blur-md opacity-0 group-hover:opacity-50 transition duration-300"></div>
                     <i class="fa-brands fa-tiktok text-2xl text-slate-400 group-hover:text-white relative z-10 transition"></i>
                 </a>
-                <a href="https://www.facebook.com/myflowproduction" target="_blank" class="group relative">
+                <a href="https://www.facebook.com/myfllowproduction/" target="_blank" class="group relative">
                     <div class="absolute inset-0 bg-blue-600 blur-md opacity-0 group-hover:opacity-50 transition duration-300"></div>
                     <i class="fa-brands fa-facebook text-2xl text-slate-400 group-hover:text-white relative z-10 transition"></i>
                 </a>
@@ -244,4 +244,5 @@ def download():
         return redirect(url_for('home'))
 
 if __name__ == '__main__':
+
     app.run(host='0.0.0.0', port=5000)
